@@ -1,13 +1,10 @@
-// const Web3 = require("web3");
-
 module.exports = {
   networks: {
     testnet54: {
       host: "testnet54.kenig.pw",
       port: 8545,
       network_id: "*",
-      from: "0xd632b642d0f2dd47807619f419bf10f2f620f954",
-      provider: web3.providers.HttpProvider("testnet54.kenig.pw:8545")
+      from: "0xd632B642D0F2dD47807619f419Bf10f2F620F954"
     },
     ganache: {
     	host: "127.0.0.1",
