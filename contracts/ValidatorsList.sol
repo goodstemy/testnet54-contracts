@@ -104,7 +104,7 @@ contract ValidatorsList {
         address[] memory addrs = new address[](candidates.length);
         
         for (uint i = 0; i < candidates.length; i++) {
-            addrs[i] = validators[i];
+            addrs[i] = candidates[i];
         }
         
         return (addrs);
