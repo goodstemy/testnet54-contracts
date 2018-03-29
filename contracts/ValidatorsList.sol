@@ -6,8 +6,9 @@ contract ValidatorsList {
     uint votesToBecameValidator = 1;
     
     address[] validators;
+    address[] candidates;
     
-    mapping(address => Candidate) candidates;
+    mapping(address => Candidate) _candidates;
     
     struct Candidate {
         address accountAddress;
@@ -23,7 +24,7 @@ contract ValidatorsList {
     }
     
     modifier isVoted(address validator, address candidate) {
-        require(candidates[candidate].voters[validator] == false);
+        require(_candidates[candidate].voters[validator] == false);
         _;
     }
     
@@ -38,10 +39,15 @@ contract ValidatorsList {
         _;
     }
     
+    modifier isCandidate(address candidate) {
+        require(_candidates[candidate].isValue == true);
+        _;
+    }
+    
     function ValidatorsList() public {
         validators.push(masterOfCeremony);
         
-        candidates[masterOfCeremony] = Candidate(
+        _candidates[masterOfCeremony] = Candidate(
             0xe091c3a55485bc1b09472d30a8a40ffb2c86d090,
             "Ivan Efremov",
             "Kaliningrad",
@@ -80,13 +86,24 @@ contract ValidatorsList {
             true
         );
         
-        candidates[accountAddress] = c;
+        _candidates[accountAddress] = c;
+        candidates.push(accountAddress);
     }
     
     function getValidators() public view returns (address[]) {
         address[] memory addrs = new address[](validators.length);
         
         for (uint i = 0; i < validators.length; i++) {
+            addrs[i] = validators[i];
+        }
+        
+        return (addrs);
+    }
+    
+    function getCandidates() public view returns (address[]) {
+        address[] memory addrs = new address[](candidates.length);
+        
+        for (uint i = 0; i < candidates.length; i++) {
             addrs[i] = validators[i];
         }
         
@@ -103,35 +120,54 @@ contract ValidatorsList {
         bool isValidator
     ) {
         assert(accountAddress != 0);
-        assert(candidates[accountAddress].isValue != false);
+        assert(_candidates[accountAddress].isValue != false);
         
         return (
-            candidates[accountAddress].fullName,
-            candidates[accountAddress].city,
-            candidates[accountAddress].minerCreation,
-            candidates[accountAddress].licenseExpiration,
-            candidates[accountAddress].licenseId,
-            candidates[accountAddress].votes,
-            candidates[accountAddress].isValidator);
+            _candidates[accountAddress].fullName,
+            _candidates[accountAddress].city,
+            _candidates[accountAddress].minerCreation,
+            _candidates[accountAddress].licenseExpiration,
+            _candidates[accountAddress].licenseId,
+            _candidates[accountAddress].votes,
+            _candidates[accountAddress].isValidator);
     }
     
     function vote(address validator, address candidate) 
         public
         isVoted(validator, candidate)
         isValidator(validator, candidate)
+        isCandidate(candidate)
     {
-        assert(candidates[candidate].isValidator != true);
+        assert(_candidates[candidate].isValidator != true);
         
-        candidates[candidate].voters[candidate] = true;
-        candidates[candidate].votes++;
+        _candidates[candidate].voters[candidate] = true;
+        _candidates[candidate].votes++;
         
-        if (candidates[candidate].votes >= votesToBecameValidator) {
-            candidates[candidate].isValidator = true;
+        if (_candidates[candidate].votes >= votesToBecameValidator) {
+            _candidates[candidate].isValidator = true;
             validators.push(candidate);
             
             if (votesToBecameValidator <= 10) {
                 votesToBecameValidator = validators.length;
             }
+        }
+        
+        removeValidatorsFromCandidates(candidate);
+    }
+    
+    function removeValidatorsFromCandidates(address candidate) private {
+        if (_candidates[candidate].isValidator) {
+            address[] c;
+            
+            for (uint i = 0; i < candidates.length; i++) {
+                if (candidates[i] != candidate) {
+                    c.push(candidates[i]);
+                }
+            }
+            
+            candidates = c;
+        } else {
+            return;
         }
     }
 }
